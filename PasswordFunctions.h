@@ -8,6 +8,12 @@ typedef struct CustomCharacters
     
 }CustomCharacters;
 
-char* getPassword(CustomCharacters *cc, int pwdLength);
+char* get_password(CustomCharacters *cc, int pwd_length, char* full_pwd);
+
+void setup_custom_characters(CustomCharacters *cc);
+
+void destroy_custom_characters(CustomCharacters *cc);
+
+void set_custom_characters(CustomCharacters *cc, char* characters);
 
 #endif // PWD_H_

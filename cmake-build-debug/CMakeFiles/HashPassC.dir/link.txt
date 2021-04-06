@@ -1,0 +1,1 @@
+/usr/bin/cc -g   CMakeFiles/HashPassC.dir/DBFunctions.c.o CMakeFiles/HashPassC.dir/PasswordFunctions.c.o CMakeFiles/HashPassC.dir/Phrase.c.o CMakeFiles/HashPassC.dir/Salt.c.o CMakeFiles/HashPassC.dir/test.c.o CMakeFiles/HashPassC.dir/Config.c.o CMakeFiles/HashPassC.dir/CryptoFunctions.c.o  -o HashPassC  -lcrypto ../sqlite3.o -ldl -lpthread 

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libsqdb.a  CMakeFiles/sqdb.dir/sqlite3.c.o
+/usr/bin/ranlib libsqdb.a

@@ -2,23 +2,54 @@
 #include <string.h>
 #include <stdlib.h>
 
-int isValidPhrase(Phrase *phrase) {
+const int MAX_WORD_LENGTH = 100;
+const int NUMBER_OF_WORDS = 6;
+
+
+int is_valid_phrase(Phrase *phrase) {
     if ((strlen(phrase->word1) > 0) && (strlen(phrase->word2) > 0) && (strlen(phrase->word3) > 0) && (strlen(phrase->word4) > 0) &&
             (strlen(phrase->word5) > 0) && (strlen(phrase->word6) > 0))
             return 1;
     return 0;
 }
 
-char* getPhrase(Phrase *phrase) {
-    char* wholePhrase = (char*)malloc(strlen(phrase->word1) + strlen(phrase->word2) + strlen(phrase->word3) + strlen(phrase->word4) +
+char* get_phrase(Phrase *phrase) {
+    char* whole_phrase = (char*)malloc(strlen(phrase->word1) + strlen(phrase->word2) + strlen(phrase->word3) + strlen(phrase->word4) +
              strlen(phrase->word5) + strlen(phrase->word6) + 1);
 
-    strcpy(wholePhrase, phrase->word1);
-    strcat(wholePhrase, phrase->word2);
-    strcat(wholePhrase, phrase->word3);
-    strcat(wholePhrase, phrase->word4);
-    strcat(wholePhrase, phrase->word5);
-    strcat(wholePhrase, phrase->word6);
+    strcpy(whole_phrase, phrase->word1);
+    strcat(whole_phrase, phrase->word2);
+    strcat(whole_phrase, phrase->word3);
+    strcat(whole_phrase, phrase->word4);
+    strcat(whole_phrase, phrase->word5);
+    strcat(whole_phrase, phrase->word6);
 
-    return wholePhrase;
+    return whole_phrase;
+}
+
+void setup_phrase(Phrase* phrase) {
+    phrase->word1 = malloc(100 * sizeof(char) * MAX_WORD_LENGTH);
+    phrase->word2 = malloc(100 * sizeof(char) * MAX_WORD_LENGTH);
+    phrase->word3 = malloc(100 * sizeof(char) * MAX_WORD_LENGTH);
+    phrase->word4 = malloc(100 * sizeof(char) * MAX_WORD_LENGTH);
+    phrase->word5 = malloc(100 * sizeof(char) * MAX_WORD_LENGTH);
+    phrase->word6 = malloc(100 * sizeof(char) * MAX_WORD_LENGTH);
+}
+
+void destroy_phrase(Phrase *phrase) {
+    free(phrase->word1);
+    free(phrase->word2);
+    free(phrase->word3);
+    free(phrase->word4);
+    free(phrase->word5);
+    free(phrase->word6);
+}
+
+int phrases_match(Phrase *phrase1, Phrase *phrase2) {
+    if (!strncmp(phrase1->word1, phrase2->word1, strlen(phrase1->word1)) && !strncmp(phrase1->word2, phrase2->word2, strlen(phrase1->word2)) &&
+            !strncmp(phrase1->word3, phrase2->word3, strlen(phrase1->word3)) && !strncmp(phrase1->word4, phrase2->word4, strlen(phrase1->word4)) &&
+            !strncmp(phrase1->word5, phrase2->word5, strlen(phrase1->word5)) && !strncmp(phrase1->word6, phrase2->word6, strlen(phrase1->word6)))
+        return 1;
+    else
+        return 0;
 }
