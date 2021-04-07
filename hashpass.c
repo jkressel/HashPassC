@@ -144,7 +144,7 @@ void create_password_option() {
     }
 
     PASSWORD_DATA password_data;
-    setup_password_data(&password_data);
+    create_password_data(&password_data);
     password_data.length = -1;
 
 
@@ -270,7 +270,7 @@ void show_passwords_option() {
 
 
             PASSWORD_DATA password_data;
-            setup_password_data(&password_data);
+            create_password_data(&password_data);
             db_record_to_password_data(&password_data, &db_record, &config);
 
 

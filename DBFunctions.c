@@ -126,22 +126,6 @@ int read_all_from_db(sqlite3 *db, DB_RECORDS *records) {
 
 }
 
-int copy_db_record(DB_RECORD *source, DB_RECORD *dest) {
-    create_db_record(dest, sizeof(source->salt), sizeof(source->username), sizeof(source->notes), sizeof(source->crypto_salt));
-    memcpy(dest->username, source->username, sizeof(source->username));
-    memcpy(dest->salt, source->salt, sizeof(source->salt));
-    memcpy(dest->notes, source->notes, sizeof(source->notes));
-    memcpy(dest->crypto_salt, source->crypto_salt, sizeof(source->crypto_salt));
-    strncpy(dest->name, source->name, strlen(source->name));
-    strncpy(dest->allowed, source->allowed, strlen(source->allowed));
-    dest->uid = source->uid;
-    dest->user_len = source->user_len;
-    dest->notes_len = source->notes_len;
-    dest->length = source->length;
-    return 0;
-
-}
-
 int update_record(sqlite3 *db, DB_RECORD *update) {
     char *query = sqlite3_mprintf("update passwords set salt = %Q, username = %Q, usernameLen = %i, notes = %Q, notesLen = %i, name = %Q, length = %i, allowedChars = %Q, cryptoSalt = %Q where uid = %i", update->salt, update->username, update->user_len, update->notes, update->notes_len, update->name, update->length, update->allowed, update->crypto_salt, update->uid);
     int status = sqlite3_exec(db, query, NULL, NULL, NULL);
@@ -152,7 +136,7 @@ int update_record(sqlite3 *db, DB_RECORD *update) {
     return status;
 }
 
-void setup_password_data(PASSWORD_DATA *password_data) {
+void create_password_data(PASSWORD_DATA *password_data) {
     password_data->allowed = (char *)malloc(301 * sizeof(char));
     password_data->name = (unsigned char *)malloc(301 * sizeof(char));
     password_data->notes = (unsigned char *)malloc(301 * sizeof(char));
