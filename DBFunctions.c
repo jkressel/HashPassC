@@ -195,7 +195,6 @@ void password_data_to_db_record(PASSWORD_DATA *password_data, DB_RECORD *db_reco
     int name_len = strlen(password_data->name);
     strncpy(db_record->name, password_data->name, name_len + 1);
     strncpy(db_record->allowed, password_data->allowed, strlen(password_data->allowed) + 1);
-    printf("\n%s\n%d", db_record->allowed, strlen(password_data->allowed));
     strncpy(db_record->username, euser_name, username_len);
     strncpy(db_record->salt, esalt, e_salt_len);
     strncpy(db_record->notes, enotes, notes_txt_len);
@@ -204,9 +203,7 @@ void password_data_to_db_record(PASSWORD_DATA *password_data, DB_RECORD *db_reco
     db_record->notes_len = notes_txt_len;
     db_record->salt_len = e_salt_len;
     db_record->user_len = username_len;
-    printf("%s\n", db_record->salt);
-    printf("%s\n", db_record->username);
-    printf("%s\n", db_record->notes);
+    db_record->uid = password_data->uid;
 
     endpdtodbr: EVP_CIPHER_CTX_cleanup(en);
     EVP_CIPHER_CTX_cleanup(de);
@@ -235,21 +232,11 @@ void db_record_to_password_data(PASSWORD_DATA *password_data, DB_RECORD *db_reco
         goto enddbrtopr;
     }
 
-    printf("%s\n", db_record->salt);
-    printf("%s\n", db_record->username);
-    printf("%s\n", db_record->notes);
-
-
     //do the decryption
     dsalt = decrypt(de, db_record->salt, &db_record->salt_len);
     duser_name = decrypt(de, db_record->username, &db_record->user_len);
     dnotes = decrypt(de, db_record->notes, &db_record->notes_len);
 
-
-//    strncpy(username, duser_name, db_record->user_len);
-//    username[db_record->user_len] = '\0';
-//    strncpy(notes, dnotes, db_record->notes_len);
-//    notes[db_record->notes_len] = '\0';
 
     strncpy(password_data->name, db_record->name, strlen(db_record->name) + 1);
     password_data->name[strlen(db_record->name)] = '\0';
@@ -257,14 +244,12 @@ void db_record_to_password_data(PASSWORD_DATA *password_data, DB_RECORD *db_reco
     password_data->allowed[strlen(db_record->allowed)] = '\0';
     strncpy(password_data->username, duser_name, db_record->user_len);
     password_data->username[db_record->user_len] = '\0';
-    printf("%s", duser_name);
-    printf("%s", dnotes);
     strncpy(password_data->salt, dsalt, 65);
     password_data->salt[64] = '\0';
-    printf("%s", password_data->salt);
     strncpy(password_data->notes, dnotes, db_record->notes_len);
     password_data->notes[db_record->notes_len] = '\0';
     password_data->length = db_record->length;
+    password_data->uid = db_record->uid;
 
 
     //free, we don't need them anymore

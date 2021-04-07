@@ -8,59 +8,20 @@
 #include "Config.h"
 #include <string.h>
 #include "DBFunctions.h"
-#include "CryptoFunctions.h"
 
 Config config;
 sqlite3 *db;
 
-unsigned char *encrypt_string(unsigned char* salt, unsigned char* plaintext, int *length) {
-    EVP_CIPHER_CTX *en = EVP_CIPHER_CTX_new();
-    EVP_CIPHER_CTX *de = EVP_CIPHER_CTX_new();
-    if (aes_init(config.encryption_pass, strlen(config.encryption_pass), salt, en, de)) {
-        printf("Couldn't initialize AES cipher\n");
-    }
-    unsigned char *result = encrypt(en, plaintext, length);
-    EVP_CIPHER_CTX_free(en);
-    EVP_CIPHER_CTX_free(de);
-    return result;
-}
 
-int update_password_option(DB_RECORD *current, char *current_password, char *current_user, char *current_notes) {
-    DB_RECORD copy_of_record;
-    copy_db_record(current, &copy_of_record);
-    char update_option = 'a';
-    while(update_option != 's') {
-        printf("%s", "g - new password, n - name, u - username, o - notes, s - save");
-        scanf("%c", &update_option);
-        switch (update_option) {
-            case 'n':
-                printf("%s (%s%s)", "New name", "Current: ", current->name);
-                free(copy_of_record.name);
-                char *pwd_name = malloc(300 * sizeof(char));
-                fgets(pwd_name, 300, stdin);
-                copy_of_record.name = pwd_name;
-                break;
-            case 'u':
-                printf("%s (%s%s)", "New username", "Current: ", current_user);
-                free(copy_of_record.username);
-                char *username = malloc(300 * sizeof(char));
-                fgets(username, 300, stdin);
-                int user_length = strlen(username);
-                copy_of_record.user_len = strlen(username);
-                copy_of_record.username = encrypt_string(current->crypto_salt, username, &user_length);
-                free(username);
-                break;
-            case 's':
-                if (open_db("hashpassdb", &db) == SQLITE_OK) {
-                    update_record(db, &copy_of_record);
-                    close_db(db);
-                } else {
-                    printf("%s", "Error opening database");
-                }
+int update_password_option(PASSWORD_DATA *current_password) {
+    char *new_name = malloc(301 * sizeof(char));
+    char *new_salt = malloc(65 * sizeof(char));
+    char *new_notes = malloc(301 * sizeof(char));
+    char *new_user = malloc(301 * sizeof(char));
+    int new_length;
 
+    char selection = 'n';
 
-        }
-    }
 
 
 }
@@ -93,21 +54,20 @@ char *create_password_from_components(Phrase *phrase, Salt *salt, CustomCharacte
     char* whole_phrase = get_phrase(phrase);
     strncpy(full_pwd, whole_phrase, strlen(whole_phrase));
     strncat(full_pwd, get_salt_str(salt), strlen(get_salt_str(salt)));
-    printf("%s", full_pwd);
     char *pwd = get_password(cc, length, full_pwd);
     free(full_pwd);
     free(whole_phrase);
     return pwd;
 }
 
-int generatePassword(CustomCharacters *cc, Phrase *phrase, int length, char *saltStr) {
+int generate_password(CustomCharacters *cc, Phrase *phrase, int length, char *salt_str) {
     char accept = 'n';
     while(accept != 'c') {
         Salt salt;
         setup_salt(&salt);
         generate_salt(&salt);
         char *pwd = create_password_from_components(phrase, &salt, cc, length);
-        strncpy(saltStr, get_salt_str(&salt), strlen(get_salt_str(&salt)));
+        strncpy(salt_str, get_salt_str(&salt), strlen(get_salt_str(&salt)));
         system("clear");
         printf("%s%s%s", "Generated Password: ", pwd, "\n\nPlease select an option:\nc - continue, g - generate new password, q - quit: ");
         scanf(" %c", &accept);
@@ -165,11 +125,16 @@ int loop_phrase(Phrase *phrase) {
 }
 
 void create_password_option() {
-    char *pwd_name = malloc(301 * sizeof(char));
-    char *user_name = malloc(301 * sizeof(char));
-    char *notes = malloc(301 * sizeof(char));
-    char *allowed_chars = malloc(301 * sizeof(char));
-    int length = -1;
+
+    //setup
+
+    DB_RECORD db_record;
+    Phrase phrase;
+    CustomCharacters cc;
+
+    setup_phrase(&phrase);
+    setup_custom_characters(&cc);
+
     int result = -1;
     if (open_db("hashpassdb", &db) == SQLITE_OK) {
 
@@ -177,86 +142,48 @@ void create_password_option() {
         printf("%s", "Error opening database");
         goto endcreate;
     }
+
+    PASSWORD_DATA password_data;
+    setup_password_data(&password_data);
+    password_data.length = -1;
+
+
     system("clear");
     printf("%s", "Password Name (Max 300 chars): ");
-    fgets(pwd_name, 300, stdin);
-    pwd_name[strcspn(pwd_name, "\n")] = '\0';
+    fgets(password_data.name, 300, stdin);
+    password_data.name[strcspn(password_data.name, "\n")] = '\0';
     printf("%s", "Username (Max 300 chars): ");
-    fgets(user_name, 300, stdin);
-    user_name[strcspn(user_name, "\n")] = '\0';
+    fgets(password_data.username, 300, stdin);
+    password_data.username[strcspn(password_data.username, "\n")] = '\0';
     printf("%s", "Notes (Max 300 chars): ");
-    fgets(notes, 300, stdin);
-    notes[strcspn(notes, "\n")] = '\0';
+    fgets(password_data.notes, 300, stdin);
+    password_data.notes[strcspn(password_data.notes, "\n")] = '\0';
     printf("%s", "Allowed Chars (leave blank for default of printable ASCII chars) (Max 300 chars):  ");
-    fgets(allowed_chars, 300, stdin);
-    allowed_chars[strcspn(allowed_chars, "\n")] = '\0';
-    while (length < 0 || length > 64) {
+    fgets(password_data.allowed, 300, stdin);
+    password_data.allowed[strcspn(password_data.allowed, "\n")] = '\0';
+    while (password_data.length < 0 || password_data.length > 64) {
         printf("%s", "Password Length (1-64): ");
-        scanf("%d", &length);
+        scanf("%d", &password_data.length);
         getchar();
     }
 
-    int userLen = strlen(user_name);
-    int notesLen = strlen(notes);
+    int userLen = strlen(password_data.username);
+    int notesLen = strlen(password_data.notes);
 
-    DB_RECORD db_record;
-    Phrase phrase;
-    setup_phrase(&phrase);
+
     printf("\n%s", "Please enter your phrase\n");
     while (loop_phrase(&phrase) != 0);
-    CustomCharacters cc;
-    setup_custom_characters(&cc);
-    char *salt = malloc(65 * sizeof(char));
 
-    if (allowed_chars[0] == '\n' || strlen(allowed_chars) == 0) {
+    if (password_data.allowed[0] == '\n' || strlen(password_data.allowed) == 0) {
         printf("%s", "Using default characters\n");
         char default_chars[] = "!\"#$%&'()*+,-./0123456789:;<>=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]\\^_`abcdefghijklmnopqrstuvwxyz{}|~";
         set_custom_characters(&cc, default_chars);
     } else {
-        set_custom_characters(&cc, allowed_chars);
+        set_custom_characters(&cc, password_data.allowed);
     }
 
-    PASSWORD_DATA password_data;
-    setup_password_data(&password_data);
-    password_data.length = length;
+    if (generate_password(&cc, &phrase, password_data.length, password_data.salt) == 0) {
 
-    if (generatePassword(&cc, &phrase, length, salt) == 0) {
-
-        strncpy(password_data.allowed, cc.characters, cc.length + 1);
-        printf("\n%s\n", password_data.allowed);
-        strncpy(password_data.notes, notes, notesLen + 1);
-        strncpy(password_data.username, user_name, userLen + 1);
-        strncpy(password_data.salt, salt, 65);
-        strncpy(password_data.name, pwd_name, strlen(pwd_name)+1);
-        printf("\n%s %d", password_data.name, strlen(pwd_name));
-
-
-//        EVP_CIPHER_CTX *en = EVP_CIPHER_CTX_new();
-//        EVP_CIPHER_CTX *de = EVP_CIPHER_CTX_new();
-//        unsigned char *salt_val = generate_crypto_salt();
-//
-//
-//        if (aes_init(config.encryption_pass, strlen(config.encryption_pass), salt_val, en, de)) {
-//            printf("Couldn't initialize AES cipher\n");
-//            goto endcreate;
-//        }
-//        unsigned char *esalt;
-//        unsigned char *euser_name;
-//        unsigned char *enotes;
-//        int e_salt_len = 65;
-//        int username_len = strlen(user_name) + 1;
-//        int notes_txt_len = strlen(notes) + 1;
-//        printf("%s", "Encryption started\n");
-//        esalt = encrypt(en, salt, &e_salt_len);
-//        euser_name = encrypt(en, user_name, &username_len);
-//        enotes = encrypt(en, notes, &notes_txt_len);
-//        printf("%s", "All encryption done\n");
-//        EVP_CIPHER_CTX_cleanup(en);
-//        EVP_CIPHER_CTX_cleanup(de);
-//        result = insert_into_db(db, esalt, &e_salt_len, euser_name, &username_len, enotes, &notes_txt_len, pwd_name, &length, cc.characters, salt_val);
-//        free(esalt);
-//        free(euser_name);
-//        free(enotes);
 
 
         password_data_to_db_record(&password_data, &db_record, &config);
@@ -266,6 +193,8 @@ void create_password_option() {
 
         if (result == SQLITE_OK)
             printf("\n%s\n", "Data successfully stored!");
+        else if (result == -1)
+            printf("\n%s\n", "Cancelled");
         else
             printf("\n%s\n", "Error!");
         sleep(3);
@@ -273,13 +202,10 @@ void create_password_option() {
         printf("\n%s\n", "Error!");
         sleep(3);
     }
-    endcreate:    free(pwd_name);
-    free(user_name);
-    free(notes);
-    free(allowed_chars);
-    destroy_phrase(&phrase);
+
+
+    endcreate: destroy_phrase(&phrase);
     destroy_custom_characters(&cc);
-    free(salt);
     destroy_db_record(&db_record);
     destroy_password_data(&password_data);
     close_db(db);
@@ -350,55 +276,10 @@ void show_passwords_option() {
 
             //setup custom characters
             set_custom_characters(&cc, password_data.allowed);
+
+            //setup salt
             setup_salt(&salt);
-//            printf("%s", password_data.salt);
             set_salt(&salt, password_data.salt);
-
-
-
-
-//            unsigned char *dsalt;
-//            unsigned char *duser_name;
-//            unsigned char *dnotes;
-//
-//            //cipher ctx
-//            EVP_CIPHER_CTX *en = EVP_CIPHER_CTX_new();
-//            EVP_CIPHER_CTX *de = EVP_CIPHER_CTX_new();
-//
-//            //let's check if we can even initialise aes
-//            if (aes_init(config.encryption_pass, strlen(config.encryption_pass), db_record.crypto_salt, en, de)) {
-//                printf("Couldn't initialize AES cipher\n");
-//                goto finish;
-//            }
-//
-//
-//            //do the decryption
-//            dsalt = decrypt(de, db_record.salt, &db_record.salt_len);
-//            duser_name = decrypt(de, db_record.username, &db_record.user_len);
-//            dnotes = decrypt(de, db_record.notes, &db_record.notes_len);
-//
-//
-//            strncpy(username, duser_name, db_record.user_len);
-//            username[db_record.user_len] = '\0';
-//            strncpy(notes, dnotes, db_record.notes_len);
-//            notes[db_record.notes_len] = '\0';
-//            setup_salt(&salt);
-//            set_salt(&salt, dsalt);
-//
-//            //free, we don't need them anymore
-//            free(dsalt);
-//            free(duser_name);
-//            free(dnotes);
-//
-//            EVP_CIPHER_CTX_cleanup(en);
-//            EVP_CIPHER_CTX_cleanup(de);
-
-
-
-
-
-
-
 
 
 
@@ -423,11 +304,11 @@ void show_passwords_option() {
                 getchar();
                 switch (pwdAction) {
                     case 'u':
-                        update_password_option(&db_record, pwd, password_data.username, password_data.notes);
+                        update_password_option(&password_data);
 
                         break;
                     case 'd':
-                        if (delete_password_option(db_record.uid) != SQLITE_OK)
+                        if (delete_password_option(password_data.uid) != SQLITE_OK)
                             pwdAction = 'n';
                         else {
                             printf("%s\n", "Password Deleted!");
@@ -509,7 +390,9 @@ void setup_phrase_first_time() {
 
 }
 
-int main() {
+int main(int    argc,
+         char **argv) {
+
     init_config(&config);
 
 
@@ -575,7 +458,7 @@ int main() {
 
         } else {
             read_config_data(&config, fp);
-            get_encryption_key(&config);
+            get_encryption_key();
 
             while(1) {
                 printf("%s",
@@ -586,7 +469,7 @@ int main() {
                 getchar();
                 switch (selection) {
                     case 'c':
-                        create_password_option(db);
+                        create_password_option();
                         break;
                     case 'v':
                         show_passwords_option();

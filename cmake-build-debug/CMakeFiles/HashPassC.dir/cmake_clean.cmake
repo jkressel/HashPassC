@@ -5,7 +5,7 @@ file(REMOVE_RECURSE
   "CMakeFiles/HashPassC.dir/PasswordFunctions.c.o"
   "CMakeFiles/HashPassC.dir/Phrase.c.o"
   "CMakeFiles/HashPassC.dir/Salt.c.o"
-  "CMakeFiles/HashPassC.dir/test.c.o"
+  "CMakeFiles/HashPassC.dir/hashpass.c.o"
   "HashPassC"
   "HashPassC.pdb"
 )

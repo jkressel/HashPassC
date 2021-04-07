@@ -28,6 +28,7 @@ typedef struct PASSWORD_DATA
     unsigned char *name;
     char *allowed;
     int length;
+    int uid;
 }PASSWORD_DATA;
 
 typedef struct DB_RECORDS{

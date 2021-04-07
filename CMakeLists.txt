@@ -16,7 +16,17 @@ add_executable(HashPassC
         Phrase.h
         Salt.c
         Salt.h
-        test.c Config.c Config.h CryptoFunctions.h CryptoFunctions.c)
+        hashpass.c Config.c Config.h CryptoFunctions.h CryptoFunctions.c)
 
 target_link_libraries(${PROJECT_NAME} -lcrypto)
 target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/sqlite3.o -ldl -lpthread)
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
+
+include_directories(${GTK3_INCLUDE_DIRS})
+link_directories(${GTK3_LIBRARY_DIRS})
+
+add_definitions(${GTK3_CFLAGS_OTHER})
+
+target_link_libraries(HashPassC ${GTK3_LIBRARIES})

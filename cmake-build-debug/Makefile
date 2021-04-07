@@ -305,32 +305,32 @@ Salt.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/HashPassC.dir/build.make CMakeFiles/HashPassC.dir/Salt.c.s
 .PHONY : Salt.c.s
 
-test.o: test.c.o
+hashpass.o: hashpass.c.o
 
-.PHONY : test.o
+.PHONY : hashpass.o
 
 # target to build an object file
-test.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/HashPassC.dir/build.make CMakeFiles/HashPassC.dir/test.c.o
-.PHONY : test.c.o
+hashpass.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/HashPassC.dir/build.make CMakeFiles/HashPassC.dir/hashpass.c.o
+.PHONY : hashpass.c.o
 
-test.i: test.c.i
+hashpass.i: hashpass.c.i
 
-.PHONY : test.i
+.PHONY : hashpass.i
 
 # target to preprocess a source file
-test.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/HashPassC.dir/build.make CMakeFiles/HashPassC.dir/test.c.i
-.PHONY : test.c.i
+hashpass.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/HashPassC.dir/build.make CMakeFiles/HashPassC.dir/hashpass.c.i
+.PHONY : hashpass.c.i
 
-test.s: test.c.s
+hashpass.s: hashpass.c.s
 
-.PHONY : test.s
+.PHONY : hashpass.s
 
 # target to generate assembly for a file
-test.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/HashPassC.dir/build.make CMakeFiles/HashPassC.dir/test.c.s
-.PHONY : test.c.s
+hashpass.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/HashPassC.dir/build.make CMakeFiles/HashPassC.dir/hashpass.c.s
+.PHONY : hashpass.c.s
 
 # Help Target
 help:
@@ -359,9 +359,9 @@ help:
 	@echo "... Salt.o"
 	@echo "... Salt.i"
 	@echo "... Salt.s"
-	@echo "... test.o"
-	@echo "... test.i"
-	@echo "... test.s"
+	@echo "... hashpass.o"
+	@echo "... hashpass.i"
+	@echo "... hashpass.s"
 .PHONY : help
 
 

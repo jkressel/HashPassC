@@ -7,7 +7,6 @@
 char* get_password(CustomCharacters* cc, int pwd_length, char* full_pwd) {
     char hash[SHA512_DIGEST_LENGTH];
     SHA512(full_pwd, strlen(full_pwd), hash);
-    printf("%d", cc->length);
     for (int i = 0; i < SHA512_DIGEST_LENGTH; i++) {
         hash[i] = cc->characters[abs(hash[i]) % cc->length];
     }

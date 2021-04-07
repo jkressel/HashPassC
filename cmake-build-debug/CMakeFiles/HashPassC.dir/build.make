@@ -129,18 +129,18 @@ CMakeFiles/HashPassC.dir/Salt.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/HashPassC.dir/Salt.c.s"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/alistair/Projects/HashPassC/Salt.c -o CMakeFiles/HashPassC.dir/Salt.c.s
 
-CMakeFiles/HashPassC.dir/test.c.o: CMakeFiles/HashPassC.dir/flags.make
-CMakeFiles/HashPassC.dir/test.c.o: ../test.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/alistair/Projects/HashPassC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building C object CMakeFiles/HashPassC.dir/test.c.o"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/HashPassC.dir/test.c.o   -c /home/alistair/Projects/HashPassC/test.c
+CMakeFiles/HashPassC.dir/hashpass.c.o: CMakeFiles/HashPassC.dir/flags.make
+CMakeFiles/HashPassC.dir/hashpass.c.o: ../hashpass.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/alistair/Projects/HashPassC/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building C object CMakeFiles/HashPassC.dir/hashpass.c.o"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/HashPassC.dir/hashpass.c.o   -c /home/alistair/Projects/HashPassC/hashpass.c
 
-CMakeFiles/HashPassC.dir/test.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/HashPassC.dir/test.c.i"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/alistair/Projects/HashPassC/test.c > CMakeFiles/HashPassC.dir/test.c.i
+CMakeFiles/HashPassC.dir/hashpass.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/HashPassC.dir/hashpass.c.i"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/alistair/Projects/HashPassC/hashpass.c > CMakeFiles/HashPassC.dir/hashpass.c.i
 
-CMakeFiles/HashPassC.dir/test.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/HashPassC.dir/test.c.s"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/alistair/Projects/HashPassC/test.c -o CMakeFiles/HashPassC.dir/test.c.s
+CMakeFiles/HashPassC.dir/hashpass.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/HashPassC.dir/hashpass.c.s"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/alistair/Projects/HashPassC/hashpass.c -o CMakeFiles/HashPassC.dir/hashpass.c.s
 
 CMakeFiles/HashPassC.dir/Config.c.o: CMakeFiles/HashPassC.dir/flags.make
 CMakeFiles/HashPassC.dir/Config.c.o: ../Config.c
@@ -174,7 +174,7 @@ HashPassC_OBJECTS = \
 "CMakeFiles/HashPassC.dir/PasswordFunctions.c.o" \
 "CMakeFiles/HashPassC.dir/Phrase.c.o" \
 "CMakeFiles/HashPassC.dir/Salt.c.o" \
-"CMakeFiles/HashPassC.dir/test.c.o" \
+"CMakeFiles/HashPassC.dir/hashpass.c.o" \
 "CMakeFiles/HashPassC.dir/Config.c.o" \
 "CMakeFiles/HashPassC.dir/CryptoFunctions.c.o"
 
@@ -185,7 +185,7 @@ HashPassC: CMakeFiles/HashPassC.dir/DBFunctions.c.o
 HashPassC: CMakeFiles/HashPassC.dir/PasswordFunctions.c.o
 HashPassC: CMakeFiles/HashPassC.dir/Phrase.c.o
 HashPassC: CMakeFiles/HashPassC.dir/Salt.c.o
-HashPassC: CMakeFiles/HashPassC.dir/test.c.o
+HashPassC: CMakeFiles/HashPassC.dir/hashpass.c.o
 HashPassC: CMakeFiles/HashPassC.dir/Config.c.o
 HashPassC: CMakeFiles/HashPassC.dir/CryptoFunctions.c.o
 HashPassC: CMakeFiles/HashPassC.dir/build.make
