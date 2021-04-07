@@ -5,6 +5,10 @@
 #include <stdlib.h>
 #include "Config.h"
 
+/**
+ * allocates memory for the config
+ * @param config
+ */
 void init_config(Config* config) {
     config->first_time = 0;
     config->db_encryption_hash = malloc(SHA512_DIGEST_LENGTH * sizeof(char));
@@ -12,12 +16,21 @@ void init_config(Config* config) {
     config->encryption_pass = malloc(50 * sizeof(char));
 }
 
+/**
+ * frees config
+ * @param config
+ */
 void destroy_config(Config *config) {
     free(config->db_encryption_hash);
     free(config->salt);
     free(config->encryption_pass);
 }
 
+/**
+ * open the config file and check if this is the first run in doing so
+ * @param config
+ * @return file pointer to the config file
+ */
 FILE* open_file_if_exists_and_check_if_first_time(Config* config) {
     FILE *fp = fopen("hashpassconfig.txt", "r+");
     if (fp == NULL) {
@@ -32,6 +45,11 @@ FILE* open_file_if_exists_and_check_if_first_time(Config* config) {
     return fp;
 }
 
+/**
+ * read data from the config file
+ * @param config
+ * @param fp
+ */
 void read_config_data(Config* config, FILE* fp) {
     char line[100];
 
@@ -43,16 +61,30 @@ void read_config_data(Config* config, FILE* fp) {
 
 }
 
+/**
+ * calculate the absolute of a given value
+ * @param value
+ * @return
+ */
 int calculate_abs(int value) {
     return abs(value);
 }
 
+/**
+ * create crypto salt
+ * @param config
+ */
 void create_salt(Config *config) {
     RAND_bytes(config->salt, SHA512_DIGEST_LENGTH);
     for (int i = 0; i < SHA512_DIGEST_LENGTH; i++)
         config->salt[i] = (char)(calculate_abs(config->salt[i])%93) + 33;
 }
 
+/**
+ * create hash of encryption password to verify that the user has entered the correct one
+ * @param pass
+ * @param config
+ */
 void create_crypto_pass_hash(char* pass, Config* config) {
     unsigned char *hash = malloc(SHA512_DIGEST_LENGTH * sizeof(char));
     char *wholePass = malloc(SHA512_DIGEST_LENGTH * 2 * sizeof(char));
@@ -67,6 +99,12 @@ void create_crypto_pass_hash(char* pass, Config* config) {
     free(wholePass);
 }
 
+/**
+ * check that the stored hash and user generated hashes match, indicating that the passwords match
+ * @param pass
+ * @param config
+ * @return
+ */
 int crypto_hashes_match(char* pass, Config* config) {
     char *hash = malloc(SHA512_DIGEST_LENGTH * sizeof(char));
     char *wholePass = malloc(SHA512_DIGEST_LENGTH * 2 * sizeof(char));

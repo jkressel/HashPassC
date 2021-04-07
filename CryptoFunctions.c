@@ -76,6 +76,10 @@ unsigned char *decrypt(EVP_CIPHER_CTX *e, unsigned char *ciphertext, int *len)
     return plaintext;
 }
 
+/**
+ * generate salt for the encryption process
+ * @return
+ */
 unsigned char* generate_crypto_salt() {
     unsigned char *random = malloc(8 * sizeof(char));
     RAND_bytes(random, 8);

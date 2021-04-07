@@ -116,7 +116,7 @@ int loop_phrase(Phrase *phrase) {
         free(word);
     }
 
-    if (!is_valid_phrase(phrase)) {
+    if (is_valid_phrase(phrase)) {
         printf("%s", "Phrase does not meet requirements!\n");
         sleep(2);
         return 1;
@@ -379,7 +379,7 @@ void setup_phrase_first_time() {
 
         }
 
-        if (phrases_match(&phrase1, &phrase2)) {
+        if (!phrases_match(&phrase1, &phrase2)) {
             printf("%s", "Great!\n");
             return;
         }

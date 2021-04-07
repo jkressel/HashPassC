@@ -14,20 +14,48 @@ int prepare_stmt(sqlite3_stmt **res, sqlite3 *db, char* stmt) {
     return sqlite3_prepare_v2(db, stmt, -1, res, &tail);
 }
 
+
+/**
+ * Opens an SQLITE3 database
+ *
+ * @param filename
+ * @param db
+ * @return returns sqlite3 status
+ */
 int open_db(char* filename, sqlite3 **db) {
     return sqlite3_open(filename, db);
 }
 
+
+/**
+ * close sqlite3 db
+ *
+ * @param db
+ * @return returns sqlite3 status
+ */
 int close_db(sqlite3 *db) {
     return sqlite3_close_v2(db);
 }
 
+/**
+ * initialise the database
+ *
+ * @param db
+ * @return sqlite3 status
+ */
 int setup_db(sqlite3 *db) {
     char stmt[] = "CREATE TABLE IF NOT EXISTS passwords(uid INTEGER PRIMARY KEY, salt BLOB NOT NULL, saltLen INT NOT NULL, username BLOB NOT NULL, usernameLen INT NOT NULL, notes BLOB, notesLen INT, name VARCHAR(300) NOT NULL, length INT NOT NULL, allowedChars VARCHAR(300) NOT NULL, cryptoSalt BLOB);";
     return sqlite3_exec(db, stmt, NULL, NULL, NULL);
 
 }
 
+
+/**
+ * insert a DB_RECORD into the database
+ * @param db
+ * @param db_record
+ * @return sqlite3 status
+ */
 int insert_into_db(sqlite3 *db, DB_RECORD *db_record) {
     char *query = sqlite3_mprintf("insert into passwords (salt, saltLen, username, usernameLen, notes, notesLen, name, length, allowedChars, cryptoSalt) values (%Q, %i, %Q, %i, %Q, %i, %Q, %i, %Q, %Q);", db_record->salt, db_record->salt_len, db_record->username, db_record->user_len, db_record->notes, db_record->notes_len, db_record->name, db_record->length, db_record->allowed, db_record->crypto_salt);
     int status = sqlite3_exec(db, query, NULL, NULL, NULL);
@@ -38,6 +66,12 @@ int insert_into_db(sqlite3 *db, DB_RECORD *db_record) {
     return status;
 }
 
+/**
+ * delete specified uid from the database
+ * @param db
+ * @param uid
+ * @return sqlite3 status
+ */
 int delete_from_db(sqlite3 *db, int *uid) {
     char *query = sqlite3_mprintf("delete from passwords where uid=%i", *uid);
     int status = sqlite3_exec(db, query, NULL, NULL, NULL);
@@ -48,6 +82,11 @@ int delete_from_db(sqlite3 *db, int *uid) {
     return status;
 }
 
+/**
+ * gets the number of records presently stored in the database
+ * @param db
+ * @return sqlite3 status
+ */
 int get_count(sqlite3 *db) {
     sqlite3_stmt *stmt;
     int count = 0;
@@ -58,6 +97,14 @@ int get_count(sqlite3 *db) {
     return count;
 }
 
+/**
+ * allocates the requited memory for DB_RECORD struct
+ * @param db_record
+ * @param salt_size
+ * @param username_size
+ * @param notes_size
+ * @param crypto_salt_size
+ */
 void create_db_record(DB_RECORD *db_record, int salt_size, int username_size, int notes_size, int crypto_salt_size) {
     db_record->salt = malloc(salt_size * sizeof(char));
     db_record->username = malloc(username_size * sizeof(char));
@@ -73,6 +120,10 @@ void create_db_record(DB_RECORD *db_record, int salt_size, int username_size, in
     db_record->salt_len = 0;
 }
 
+/**
+ * properly frees a DB_RECORD struct
+ * @param db_record
+ */
 void destroy_db_record(DB_RECORD *db_record) {
     free(db_record->salt);
     free(db_record->username);
@@ -82,11 +133,20 @@ void destroy_db_record(DB_RECORD *db_record) {
     free(db_record->allowed);
 }
 
+/**
+ * allocates memory for DB_RECORDS struct - note that DB_RECORDS is essentially a list of DB_RECORD
+ * @param db_records
+ * @param count
+ */
 void create_db_records(DB_RECORDS *db_records, int count) {
     db_records->db_records = (struct DB_RECORD*)malloc(count*sizeof(struct DB_RECORD));
     db_records->number_of_records = count;
 }
 
+/**
+ * frees DB_RECORDS
+ * @param dbRecords
+ */
 void destroy_db_records(DB_RECORDS *dbRecords) {
     for (int i = 0; i < dbRecords->number_of_records; i++) {
         destroy_db_record(&dbRecords->db_records[i]);
@@ -94,7 +154,12 @@ void destroy_db_records(DB_RECORDS *dbRecords) {
     free(dbRecords->db_records);
 }
 
-
+/**
+ * read all records from the db and create a DB_RECORD for each
+ * @param db
+ * @param records
+ * @return sqlite3 status
+ */
 int read_all_from_db(sqlite3 *db, DB_RECORDS *records) {
     sqlite3_stmt *stmt;
     int count = get_count(db);
@@ -126,6 +191,12 @@ int read_all_from_db(sqlite3 *db, DB_RECORDS *records) {
 
 }
 
+/**
+ * update a database record
+ * @param db
+ * @param update
+ * @return sqlite3 status
+ */
 int update_record(sqlite3 *db, DB_RECORD *update) {
     char *query = sqlite3_mprintf("update passwords set salt = %Q, username = %Q, usernameLen = %i, notes = %Q, notesLen = %i, name = %Q, length = %i, allowedChars = %Q, cryptoSalt = %Q where uid = %i", update->salt, update->username, update->user_len, update->notes, update->notes_len, update->name, update->length, update->allowed, update->crypto_salt, update->uid);
     int status = sqlite3_exec(db, query, NULL, NULL, NULL);
@@ -136,6 +207,10 @@ int update_record(sqlite3 *db, DB_RECORD *update) {
     return status;
 }
 
+/**
+ * allocate memory for PASSWORD_DATA
+ * @param password_data
+ */
 void create_password_data(PASSWORD_DATA *password_data) {
     password_data->allowed = (char *)malloc(301 * sizeof(char));
     password_data->name = (unsigned char *)malloc(301 * sizeof(char));
@@ -144,6 +219,10 @@ void create_password_data(PASSWORD_DATA *password_data) {
     password_data->salt = (unsigned char *)malloc(65 * sizeof(char));
 }
 
+/**
+ * free PASSWORD_DATA
+ * @param password_data
+ */
 void destroy_password_data(PASSWORD_DATA *password_data) {
     free(password_data->allowed);
     free(password_data->name);
@@ -152,6 +231,12 @@ void destroy_password_data(PASSWORD_DATA *password_data) {
     free(password_data->salt);
 }
 
+/**
+ * convert PASSWORD_DATA to DB_RECORD ready to insert into the db, the involves encrypting the salt, username and notes
+ * @param password_data
+ * @param db_record
+ * @param config
+ */
 void password_data_to_db_record(PASSWORD_DATA *password_data, DB_RECORD *db_record, Config *config) {
     EVP_CIPHER_CTX *en = EVP_CIPHER_CTX_new();
     EVP_CIPHER_CTX *de = EVP_CIPHER_CTX_new();
@@ -198,6 +283,12 @@ void password_data_to_db_record(PASSWORD_DATA *password_data, DB_RECORD *db_reco
 
 }
 
+/**
+ * convert DB_RECORD to PASSWORD_DATA, this involves decrypting the salt, username and notes
+ * @param password_data
+ * @param db_record
+ * @param config
+ */
 void db_record_to_password_data(PASSWORD_DATA *password_data, DB_RECORD *db_record, Config *config) {
 
 
