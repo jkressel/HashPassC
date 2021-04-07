@@ -393,7 +393,7 @@ void setup_phrase_first_time() {
 int main(int    argc,
          char **argv) {
 
-    init_config(&config);
+    start:    init_config(&config);
 
 
     if (open_db("hashpassdb", &db) == SQLITE_OK) {
@@ -451,9 +451,12 @@ int main(int    argc,
 
             if (response == 'n') {
                 setup_phrase_first_time();
-            } else {
-                printf("Okay then, you're good to go, re-run HashPass to get going!");
             }
+
+            printf("Okay then, you're good to go!");
+            fclose(fp);
+            destroy_config(&config);
+            goto start;
 
 
         } else {
