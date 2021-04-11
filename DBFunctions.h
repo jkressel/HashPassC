@@ -56,7 +56,7 @@ int delete_from_db(sqlite3 *db, int *uid);
 
 void destroy_db_record(DB_RECORD *db_record);
 
-int copy_password_data(PASSWORD_DATA *password_data, PASSWORD_DATA *copy_password_data);
+void copy_password_data(PASSWORD_DATA *password_data, PASSWORD_DATA *copy_password_data);
 
 int update_record(sqlite3 *db, DB_RECORD *update);
 

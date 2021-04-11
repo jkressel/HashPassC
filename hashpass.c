@@ -13,18 +13,6 @@ Config config;
 sqlite3 *db;
 
 
-int update_password_option(PASSWORD_DATA *current_password) {
-    char *new_name = malloc(301 * sizeof(char));
-    char *new_salt = malloc(65 * sizeof(char));
-    char *new_notes = malloc(301 * sizeof(char));
-    char *new_user = malloc(301 * sizeof(char));
-    int new_length;
-
-    char selection = 'n';
-
-
-
-}
 
 int delete_password_option(int uid) {
     //open db
@@ -124,6 +112,96 @@ int loop_phrase(Phrase *phrase) {
     return 0;
 }
 
+int update_password_option(PASSWORD_DATA *current_password) {
+
+    char selection = 'r';
+    while (selection == 'r') {
+
+        Phrase phrase;
+        CustomCharacters cc;
+
+        setup_phrase(&phrase);
+        setup_custom_characters(&cc);
+
+        PASSWORD_DATA copy;
+        create_password_data(&copy);
+
+        copy.length = -1;
+        copy.uid = current_password->uid;
+
+        system("clear");
+        printf("%s", "Password Name (Max 300 chars): ");
+        fgets(copy.name, 300, stdin);
+        copy.name[strcspn(copy.name, "\n")] = '\0';
+        printf("%s", "Username (Max 300 chars): ");
+        fgets(copy.username, 300, stdin);
+        copy.username[strcspn(copy.username, "\n")] = '\0';
+        printf("%s", "Notes (Max 300 chars): ");
+        fgets(copy.notes, 300, stdin);
+        copy.notes[strcspn(copy.notes, "\n")] = '\0';
+        printf("%s", "Allowed Chars (leave blank for default of printable ASCII chars) (Max 300 chars):  ");
+        fgets(copy.allowed, 300, stdin);
+        copy.allowed[strcspn(copy.allowed, "\n")] = '\0';
+        while (copy.length < 0 || copy.length > 64) {
+            printf("%s", "Password Length (1-64): ");
+            scanf("%d", &copy.length);
+            getchar();
+        }
+
+        printf("\n%s", "Please enter your phrase\n");
+        while (loop_phrase(&phrase) != 0);
+
+        if (copy.allowed[0] == '\n' || strlen(copy.allowed) == 0) {
+            printf("%s", "Using default characters\n");
+            char default_chars[] = "!\"#$%&'()*+,-./0123456789:;<>=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]\\^_`abcdefghijklmnopqrstuvwxyz{}|~";
+            set_custom_characters(&cc, default_chars);
+            strncpy(copy.allowed, default_chars, strlen(default_chars) + 1);
+        } else {
+            set_custom_characters(&cc, copy.allowed);
+        }
+
+        if (generate_password(&cc, &phrase, copy.length, copy.salt) == 0) {
+            Salt salt;
+            setup_salt(&salt);
+            set_salt(&salt, copy.salt);
+            char *pwd = create_password_from_components(&phrase, &salt, &cc, copy.length);
+            printf("%s %s %s %s\n", "Old name:", current_password->name, "New name:", copy.name);
+            printf("%s %s %s %s\n", "Old username:", current_password->username, "New username:", copy.username);
+            printf("%s %s %s %s\n", "Old notes:", current_password->notes, "New notes:", copy.notes);
+            printf("%s %s\n", "New password:", pwd);
+
+            printf("\n\n\n%s", "a - accept, r - retry, c - cancel: ");
+            scanf(" %c", &selection);
+            getchar();
+
+            if (selection == 'a') {
+                if (open_db("hashpassdb", &db) == SQLITE_OK) {
+                    DB_RECORD db_record;
+                    password_data_to_db_record(&copy, &db_record, &config);
+                    int result = update_record(db, &db_record);
+                    if (result == DB_READ_OK) {
+                        printf("%s\n", "Successfully updated!");
+                    }
+                    close_db(db);
+                }
+            }
+
+            destroy_salt(&salt);
+            destroy_phrase(&phrase);
+            destroy_custom_characters(&cc);
+            destroy_password_data(&copy);
+
+            if (selection == 'a' || selection == 'c')
+                return 0;
+
+        }
+
+
+    }
+
+}
+
+
 void create_password_option() {
 
     //setup
@@ -178,6 +256,7 @@ void create_password_option() {
         printf("%s", "Using default characters\n");
         char default_chars[] = "!\"#$%&'()*+,-./0123456789:;<>=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]\\^_`abcdefghijklmnopqrstuvwxyz{}|~";
         set_custom_characters(&cc, default_chars);
+        strncpy(password_data.allowed, default_chars, strlen(default_chars) + 1);
     } else {
         set_custom_characters(&cc, password_data.allowed);
     }
@@ -305,7 +384,6 @@ void show_passwords_option() {
                 switch (pwdAction) {
                     case 'u':
                         update_password_option(&password_data);
-
                         break;
                     case 'd':
                         if (delete_password_option(password_data.uid) != SQLITE_OK)

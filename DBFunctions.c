@@ -232,6 +232,22 @@ void destroy_password_data(PASSWORD_DATA *password_data) {
 }
 
 /**
+ * create a copy of PASSWORD_DATA
+ * @param password_data
+ * @param copy_password_data
+ */
+void copy_password_data(PASSWORD_DATA *password_data, PASSWORD_DATA *copy_password_data) {
+    strncpy(copy_password_data->name, password_data->name, strlen(password_data->name) + 1);
+    strncpy(copy_password_data->username, password_data->username, strlen(password_data->username) + 1);
+    strncpy(copy_password_data->notes, password_data->notes, strlen(password_data->notes) + 1);
+    strncpy(copy_password_data->salt, password_data->salt, strlen(password_data->salt) + 1);
+    strncpy(copy_password_data->allowed, password_data->allowed, strlen(password_data->allowed) + 1);
+
+    copy_password_data->uid = password_data->uid;
+    copy_password_data->length = password_data->length;
+}
+
+/**
  * convert PASSWORD_DATA to DB_RECORD ready to insert into the db, the involves encrypting the salt, username and notes
  * @param password_data
  * @param db_record

@@ -42,12 +42,12 @@ char* get_phrase(Phrase *phrase) {
  * @param phrase
  */
 void setup_phrase(Phrase* phrase) {
-    phrase->word1 = malloc(100 * sizeof(char) * MAX_WORD_LENGTH);
-    phrase->word2 = malloc(100 * sizeof(char) * MAX_WORD_LENGTH);
-    phrase->word3 = malloc(100 * sizeof(char) * MAX_WORD_LENGTH);
-    phrase->word4 = malloc(100 * sizeof(char) * MAX_WORD_LENGTH);
-    phrase->word5 = malloc(100 * sizeof(char) * MAX_WORD_LENGTH);
-    phrase->word6 = malloc(100 * sizeof(char) * MAX_WORD_LENGTH);
+    phrase->word1 = malloc(101 * sizeof(char) * MAX_WORD_LENGTH);
+    phrase->word2 = malloc(101 * sizeof(char) * MAX_WORD_LENGTH);
+    phrase->word3 = malloc(101 * sizeof(char) * MAX_WORD_LENGTH);
+    phrase->word4 = malloc(101 * sizeof(char) * MAX_WORD_LENGTH);
+    phrase->word5 = malloc(101 * sizeof(char) * MAX_WORD_LENGTH);
+    phrase->word6 = malloc(101 * sizeof(char) * MAX_WORD_LENGTH);
 }
 
 /**
