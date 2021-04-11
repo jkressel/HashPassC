@@ -112,53 +112,53 @@ int loop_phrase(Phrase *phrase) {
     return 0;
 }
 
-int update_password_option(PASSWORD_DATA *current_password) {
+void get_password_data_to_store(PASSWORD_DATA *password_data, CustomCharacters *cc, Phrase *phrase) {
+    system("clear");
+    printf("%s", "Password Name (Max 300 chars): ");
+    fgets(password_data->name, 300, stdin);
+    password_data->name[strcspn(password_data->name, "\n")] = '\0';
+    printf("%s", "Username (Max 300 chars): ");
+    fgets(password_data->username, 300, stdin);
+    password_data->username[strcspn(password_data->username, "\n")] = '\0';
+    printf("%s", "Notes (Max 300 chars): ");
+    fgets(password_data->notes, 300, stdin);
+    password_data->notes[strcspn(password_data->notes, "\n")] = '\0';
+    printf("%s", "Allowed Chars (leave blank for default of printable ASCII chars) (Max 300 chars):  ");
+    fgets(password_data->allowed, 300, stdin);
+    password_data->allowed[strcspn(password_data->allowed, "\n")] = '\0';
+    while (password_data->length < 0 || password_data->length > 64) {
+        printf("%s", "Password Length (1-64): ");
+        scanf("%d", &password_data->length);
+        getchar();
+    }
 
+    printf("\n%s", "Please enter your phrase\n");
+    while (loop_phrase(phrase) != 0);
+
+    if (password_data->allowed[0] == '\n' || strlen(password_data->allowed) == 0) {
+        printf("%s", "Using default characters\n");
+        char default_chars[] = "!\"#$%&'()*+,-./0123456789:;<>=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]\\^_`abcdefghijklmnopqrstuvwxyz{}|~";
+        set_custom_characters(cc, default_chars);
+        strncpy(password_data->allowed, default_chars, strlen(default_chars) + 1);
+    } else {
+        set_custom_characters(cc, password_data->allowed);
+    }
+}
+
+int update_password_option(PASSWORD_DATA *current_password) {
+    Phrase phrase;
+    CustomCharacters cc;
+
+    setup_phrase(&phrase);
+    setup_custom_characters(&cc);
     char selection = 'r';
     while (selection == 'r') {
-
-        Phrase phrase;
-        CustomCharacters cc;
-
-        setup_phrase(&phrase);
-        setup_custom_characters(&cc);
-
         PASSWORD_DATA copy;
         create_password_data(&copy);
-
         copy.length = -1;
         copy.uid = current_password->uid;
 
-        system("clear");
-        printf("%s", "Password Name (Max 300 chars): ");
-        fgets(copy.name, 300, stdin);
-        copy.name[strcspn(copy.name, "\n")] = '\0';
-        printf("%s", "Username (Max 300 chars): ");
-        fgets(copy.username, 300, stdin);
-        copy.username[strcspn(copy.username, "\n")] = '\0';
-        printf("%s", "Notes (Max 300 chars): ");
-        fgets(copy.notes, 300, stdin);
-        copy.notes[strcspn(copy.notes, "\n")] = '\0';
-        printf("%s", "Allowed Chars (leave blank for default of printable ASCII chars) (Max 300 chars):  ");
-        fgets(copy.allowed, 300, stdin);
-        copy.allowed[strcspn(copy.allowed, "\n")] = '\0';
-        while (copy.length < 0 || copy.length > 64) {
-            printf("%s", "Password Length (1-64): ");
-            scanf("%d", &copy.length);
-            getchar();
-        }
-
-        printf("\n%s", "Please enter your phrase\n");
-        while (loop_phrase(&phrase) != 0);
-
-        if (copy.allowed[0] == '\n' || strlen(copy.allowed) == 0) {
-            printf("%s", "Using default characters\n");
-            char default_chars[] = "!\"#$%&'()*+,-./0123456789:;<>=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]\\^_`abcdefghijklmnopqrstuvwxyz{}|~";
-            set_custom_characters(&cc, default_chars);
-            strncpy(copy.allowed, default_chars, strlen(default_chars) + 1);
-        } else {
-            set_custom_characters(&cc, copy.allowed);
-        }
+        get_password_data_to_store(&copy, &cc, &phrase);
 
         if (generate_password(&cc, &phrase, copy.length, copy.salt) == 0) {
             Salt salt;
@@ -226,40 +226,7 @@ void create_password_option() {
     password_data.length = -1;
 
 
-    system("clear");
-    printf("%s", "Password Name (Max 300 chars): ");
-    fgets(password_data.name, 300, stdin);
-    password_data.name[strcspn(password_data.name, "\n")] = '\0';
-    printf("%s", "Username (Max 300 chars): ");
-    fgets(password_data.username, 300, stdin);
-    password_data.username[strcspn(password_data.username, "\n")] = '\0';
-    printf("%s", "Notes (Max 300 chars): ");
-    fgets(password_data.notes, 300, stdin);
-    password_data.notes[strcspn(password_data.notes, "\n")] = '\0';
-    printf("%s", "Allowed Chars (leave blank for default of printable ASCII chars) (Max 300 chars):  ");
-    fgets(password_data.allowed, 300, stdin);
-    password_data.allowed[strcspn(password_data.allowed, "\n")] = '\0';
-    while (password_data.length < 0 || password_data.length > 64) {
-        printf("%s", "Password Length (1-64): ");
-        scanf("%d", &password_data.length);
-        getchar();
-    }
-
-    int userLen = strlen(password_data.username);
-    int notesLen = strlen(password_data.notes);
-
-
-    printf("\n%s", "Please enter your phrase\n");
-    while (loop_phrase(&phrase) != 0);
-
-    if (password_data.allowed[0] == '\n' || strlen(password_data.allowed) == 0) {
-        printf("%s", "Using default characters\n");
-        char default_chars[] = "!\"#$%&'()*+,-./0123456789:;<>=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]\\^_`abcdefghijklmnopqrstuvwxyz{}|~";
-        set_custom_characters(&cc, default_chars);
-        strncpy(password_data.allowed, default_chars, strlen(default_chars) + 1);
-    } else {
-        set_custom_characters(&cc, password_data.allowed);
-    }
+    get_password_data_to_store(&password_data, &cc, &phrase);
 
     if (generate_password(&cc, &phrase, password_data.length, password_data.salt) == 0) {
 
