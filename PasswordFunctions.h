@@ -8,6 +8,8 @@ typedef struct CustomCharacters
     
 }CustomCharacters;
 
+char DEFAULT_CHARS[100];
+
 char* get_password(CustomCharacters *cc, int pwd_length, char* full_pwd);
 
 void setup_custom_characters(CustomCharacters *cc);

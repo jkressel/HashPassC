@@ -137,9 +137,8 @@ void get_password_data_to_store(PASSWORD_DATA *password_data, CustomCharacters *
 
     if (password_data->allowed[0] == '\n' || strlen(password_data->allowed) == 0) {
         printf("%s", "Using default characters\n");
-        char default_chars[] = "!\"#$%&'()*+,-./0123456789:;<>=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]\\^_`abcdefghijklmnopqrstuvwxyz{}|~";
-        set_custom_characters(cc, default_chars);
-        strncpy(password_data->allowed, default_chars, strlen(default_chars) + 1);
+        set_custom_characters(cc, DEFAULT_CHARS);
+        strncpy(password_data->allowed, DEFAULT_CHARS, strlen(DEFAULT_CHARS) + 1);
     } else {
         set_custom_characters(cc, password_data->allowed);
     }
@@ -180,10 +179,15 @@ int update_password_option(PASSWORD_DATA *current_password) {
                     password_data_to_db_record(&copy, &db_record, &config);
                     int result = update_record(db, &db_record);
                     if (result == DB_READ_OK) {
-                        printf("%s\n", "Successfully updated!");
+                        printf("\n%s\n", "Successfully updated!");
+                    } else {
+                        printf("\n%s\n", "Unable to insert updated record into the database, the old data is still stored.");
                     }
                     close_db(db);
+                } else {
+                    printf("\n%s\n", "Unable to open the database!");
                 }
+                sleep(3);
             }
 
             destroy_salt(&salt);

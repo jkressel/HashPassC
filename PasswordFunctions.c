@@ -2,8 +2,9 @@
 #include <openssl/sha.h>
 #include <string.h>
 #include <stdlib.h>
-#include "stdio.h"
 
+
+char DEFAULT_CHARS[] = "!\"#$%&'()*+,-./0123456789:;<>=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]\\^_`abcdefghijklmnopqrstuvwxyz{}|~";
 
 /**
  * generate that password!
