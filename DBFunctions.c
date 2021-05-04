@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "DBFunctions.h"
+#include "Base64Encode.h"
+#include "Base64Decode.h"
 
 const int DB_READ_OK = 0;
 
@@ -44,7 +46,7 @@ int close_db(sqlite3 *db) {
  * @return sqlite3 status
  */
 int setup_db(sqlite3 *db) {
-    char stmt[] = "CREATE TABLE IF NOT EXISTS passwords(uid INTEGER PRIMARY KEY, salt BLOB NOT NULL, saltLen INT NOT NULL, username BLOB NOT NULL, usernameLen INT NOT NULL, notes BLOB, notesLen INT, name VARCHAR(300) NOT NULL, length INT NOT NULL, allowedChars VARCHAR(300) NOT NULL, cryptoSalt BLOB);";
+    char stmt[] = "CREATE TABLE IF NOT EXISTS passwords(uid INTEGER PRIMARY KEY, salt BLOB NOT NULL, saltLen INT NOT NULL, username BLOB NOT NULL, usernameLen INT NOT NULL, notes BLOB, notesLen INT, name VARCHAR(300) NOT NULL, length INT NOT NULL, allowedChars VARCHAR(300) NOT NULL, cryptoSalt BLOB, cryptoSaltLength INT NOT NULL);";
     return sqlite3_exec(db, stmt, NULL, NULL, NULL);
 
 }
@@ -57,7 +59,7 @@ int setup_db(sqlite3 *db) {
  * @return sqlite3 status
  */
 int insert_into_db(sqlite3 *db, DB_RECORD *db_record) {
-    char *query = sqlite3_mprintf("insert into passwords (salt, saltLen, username, usernameLen, notes, notesLen, name, length, allowedChars, cryptoSalt) values (%Q, %i, %Q, %i, %Q, %i, %Q, %i, %Q, %Q);", db_record->salt, db_record->salt_len, db_record->username, db_record->user_len, db_record->notes, db_record->notes_len, db_record->name, db_record->length, db_record->allowed, db_record->crypto_salt);
+    char *query = sqlite3_mprintf("insert into passwords (salt, saltLen, username, usernameLen, notes, notesLen, name, length, allowedChars, cryptoSalt, cryptoSaltLength) values (%Q, %i, %Q, %i, %Q, %i, %Q, %i, %Q, %Q, %i);", db_record->salt, db_record->salt_len, db_record->username, db_record->user_len, db_record->notes, db_record->notes_len, db_record->name, db_record->length, db_record->allowed, db_record->crypto_salt, db_record->crypto_salt_len);
     int status = sqlite3_exec(db, query, NULL, NULL, NULL);
     if (status != SQLITE_OK) {
         printf("\n%s", sqlite3_errmsg(db));
@@ -168,7 +170,7 @@ int read_all_from_db(sqlite3 *db, DB_RECORDS *records) {
         sqlite3_prepare_v2(db, "select * from passwords;", -1, &stmt, NULL);
         int i = 0;
         while (sqlite3_step(stmt) != SQLITE_DONE) {
-            create_db_record(&records->db_records[i], sqlite3_column_bytes(stmt, 1), sqlite3_column_bytes(stmt, 2), sqlite3_column_bytes(stmt, 3), sqlite3_column_bytes(stmt, 7));
+            create_db_record(&records->db_records[i], sqlite3_column_bytes(stmt, 1) + 1, sqlite3_column_bytes(stmt, 2) + 1, sqlite3_column_bytes(stmt, 3) + 1, sqlite3_column_bytes(stmt, 7) + 1);
             records->db_records[i].uid = sqlite3_column_int(stmt, 0);
             memcpy(records->db_records[i].salt, sqlite3_column_text(stmt, 1), sqlite3_column_bytes(stmt, 1));
             records->db_records[i].salt_len = sqlite3_column_int(stmt, 2);
@@ -180,6 +182,7 @@ int read_all_from_db(sqlite3 *db, DB_RECORDS *records) {
             records->db_records[i].length = sqlite3_column_int(stmt, 8);
             records->db_records[i].allowed = strdup((const char*)sqlite3_column_text(stmt, 9));
             memcpy(records->db_records[i].crypto_salt, sqlite3_column_text(stmt, 10), sqlite3_column_bytes(stmt, 10));
+            records->db_records[i].crypto_salt_len = sqlite3_column_int(stmt, 11);
             i++;
 
         }
@@ -198,7 +201,7 @@ int read_all_from_db(sqlite3 *db, DB_RECORDS *records) {
  * @return sqlite3 status
  */
 int update_record(sqlite3 *db, DB_RECORD *update) {
-    char *query = sqlite3_mprintf("update passwords set salt = %Q, username = %Q, usernameLen = %i, notes = %Q, notesLen = %i, name = %Q, length = %i, allowedChars = %Q, cryptoSalt = %Q where uid = %i", update->salt, update->username, update->user_len, update->notes, update->notes_len, update->name, update->length, update->allowed, update->crypto_salt, update->uid);
+    char *query = sqlite3_mprintf("update passwords set salt = %Q, username = %Q, usernameLen = %i, notes = %Q, notesLen = %i, name = %Q, length = %i, allowedChars = %Q, cryptoSalt = %Q, cryptoSaltLength = %i where uid = %i", update->salt, update->username, update->user_len, update->notes, update->notes_len, update->name, update->length, update->allowed, update->crypto_salt, update->crypto_salt_len, update->uid);
     int status = sqlite3_exec(db, query, NULL, NULL, NULL);
     if (status != SQLITE_OK) {
         printf("\n%s", sqlite3_errmsg(db));
@@ -258,8 +261,13 @@ void password_data_to_db_record(PASSWORD_DATA *password_data, DB_RECORD *db_reco
     EVP_CIPHER_CTX *de = EVP_CIPHER_CTX_new();
     unsigned char *salt_val = generate_crypto_salt();
 
+    char *enc_crypto;
+    size_t enc_len;
+    Base64Encode(salt_val, 8, &enc_crypto, &enc_len);
+    enc_crypto[enc_len] = '\0';
 
-    if (aes_init(config->encryption_pass, strlen(config->encryption_pass), salt_val, en, de)) {
+
+    if (aes_init(config->encryption_pass, strlen(config->encryption_pass), enc_crypto, en, de)) {
         printf("Couldn't initialize AES cipher\n");
         goto endpdtodbr;
     }
@@ -275,20 +283,32 @@ void password_data_to_db_record(PASSWORD_DATA *password_data, DB_RECORD *db_reco
     enotes = encrypt(en, password_data->notes, &notes_txt_len);
     printf("%s", "All encryption done\n");
 
-    create_db_record(db_record, e_salt_len, username_len, notes_txt_len, 8);
+    char *enc_user;
+    char *enc_salt;
+    char *enc_notes;
+
+    Base64Encode(euser_name, username_len, &enc_user, &enc_len);
+    enc_user[enc_len] = '\0';
+    Base64Encode(esalt, e_salt_len, &enc_salt, &enc_len);
+    enc_salt[enc_len] = '\0';
+    Base64Encode(enotes, notes_txt_len, &enc_notes, &enc_len);
+    enc_notes[enc_len] = '\0';
+
+    create_db_record(db_record, strlen(enc_salt) + 1, strlen(enc_user) + 1, strlen(enc_notes) + 1, strlen(enc_crypto) + 1);
 
     int name_len = strlen(password_data->name);
     strncpy(db_record->name, password_data->name, name_len + 1);
     strncpy(db_record->allowed, password_data->allowed, strlen(password_data->allowed) + 1);
-    strncpy(db_record->username, euser_name, username_len);
-    strncpy(db_record->salt, esalt, e_salt_len);
-    strncpy(db_record->notes, enotes, notes_txt_len);
-    strncpy(db_record->crypto_salt, salt_val, strlen(salt_val));
+    strncpy(db_record->username, enc_user, strlen(enc_user) + 1);
+    strncpy(db_record->salt, enc_salt, strlen(enc_salt) + 1);
+    strncpy(db_record->notes, enc_notes, strlen(enc_notes) + 1);
+    strncpy(db_record->crypto_salt, enc_crypto, strlen(enc_crypto) + 1);
     db_record->length = password_data->length;
-    db_record->notes_len = notes_txt_len;
-    db_record->salt_len = e_salt_len;
-    db_record->user_len = username_len;
+    db_record->notes_len = strlen(db_record->notes);
+    db_record->salt_len = strlen(db_record->salt);
+    db_record->user_len = strlen(db_record->username);
     db_record->uid = password_data->uid;
+    db_record->crypto_salt_len = strlen(enc_crypto);
 
     endpdtodbr: EVP_CIPHER_CTX_cleanup(en);
     EVP_CIPHER_CTX_cleanup(de);
@@ -296,6 +316,10 @@ void password_data_to_db_record(PASSWORD_DATA *password_data, DB_RECORD *db_reco
     free(euser_name);
     free(enotes);
     free(salt_val);
+    free(enc_notes);
+    free(enc_user);
+    free(enc_salt);
+    free(enc_crypto);
 
 }
 
@@ -313,20 +337,43 @@ void db_record_to_password_data(PASSWORD_DATA *password_data, DB_RECORD *db_reco
     unsigned char *duser_name;
     unsigned char *dnotes;
 
+    //do the decryption
+    char *dec_salt;
+    char *dec_user;
+    char *dec_notes;
+    db_record->salt[db_record->salt_len] = '\0';
+    db_record->username[db_record->user_len] = '\0';
+    db_record->notes[db_record->notes_len] = '\0';
+    db_record->crypto_salt[db_record->crypto_salt_len] = '\0';
+    printf("%s\n", db_record->salt);
+    printf("%s\n", db_record->username);
+    printf("%s\n", db_record->notes);
+    printf("%s\n", db_record->crypto_salt);
+    Base64Decode(db_record->salt, &dec_salt, &db_record->salt_len);
+    Base64Decode(db_record->username, &dec_user, &db_record->user_len);
+    Base64Decode(db_record->notes, &dec_notes, &db_record->notes_len);
+    printf("%d\n", db_record->salt_len);
+    printf("%d\n", db_record->user_len);
+    printf("%d\n", db_record->notes_len);
+
     //cipher ctx
     EVP_CIPHER_CTX *en = EVP_CIPHER_CTX_new();
     EVP_CIPHER_CTX *de = EVP_CIPHER_CTX_new();
 
+    printf("%s\n", config->encryption_pass);
     //let's check if we can even initialise aes
     if (aes_init(config->encryption_pass, strlen(config->encryption_pass), db_record->crypto_salt, en, de)) {
         printf("Couldn't initialize AES cipher\n");
         goto enddbrtopr;
     }
 
-    //do the decryption
-    dsalt = decrypt(de, db_record->salt, &db_record->salt_len);
-    duser_name = decrypt(de, db_record->username, &db_record->user_len);
-    dnotes = decrypt(de, db_record->notes, &db_record->notes_len);
+    dsalt = decrypt(de, dec_salt, &db_record->salt_len);
+    duser_name = decrypt(de, dec_user, &db_record->user_len);
+    dnotes = decrypt(de, dec_notes, &db_record->notes_len);
+
+    free(dec_salt);
+    free(dec_user);
+    free(dec_notes);
 
 
     strncpy(password_data->name, db_record->name, strlen(db_record->name) + 1);

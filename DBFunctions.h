@@ -17,6 +17,7 @@ typedef struct DB_RECORD
     int length;
     char *allowed;
     unsigned char *crypto_salt;
+    int crypto_salt_len;
     int uid;
 }DB_RECORD;
 

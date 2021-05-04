@@ -13,7 +13,7 @@ void init_config(Config* config) {
     config->first_time = 0;
     config->db_encryption_hash = malloc(SHA512_DIGEST_LENGTH * sizeof(char));
     config->salt = malloc(SHA512_DIGEST_LENGTH * sizeof(char));
-    config->encryption_pass = malloc(50 * sizeof(char));
+    config->encryption_pass = malloc(51 * sizeof(char));
 }
 
 /**

@@ -282,7 +282,7 @@ void show_passwords_option() {
         //only proceed if all was read ok
         if (read_all_from_db(db, &records) == DB_READ_OK) {
             //close that database, we're done with it for now
-            close_db(db);
+//            close_db(db);
             system("clear");
 
             //print the heading
@@ -374,6 +374,8 @@ void show_passwords_option() {
             destroy_phrase(&phrase);
 
 
+        } else {
+            close_db(db);
         }
 
         finish: destroy_db_records(&records);
@@ -391,6 +393,7 @@ void get_encryption_key() {
         printf("Enter the encryption password: ");
         if (fgets(pw, 50, stdin) != NULL) {
 
+            pw[strcspn(pw, "\n")] = '\0';
             if (crypto_hashes_match(pw, &config) == 0) {
                 correct_input = 1;
             } else {
@@ -399,7 +402,7 @@ void get_encryption_key() {
 
         }
     }
-    strncpy(config.encryption_pass, pw, strlen(pw));
+    strncpy(config.encryption_pass, pw, strlen(pw) + 1);
     system("clear");
     free(pw);
 }
@@ -480,6 +483,7 @@ int main(int    argc,
             while (!correctinput) {
                 printf("Enter an encryption password : ");
                 if (fgets(pw, 50, stdin) != NULL) {
+                    pw[strcspn(pw, "\n")] = '\0';
                     correctinput = 1;
                 }
             }
