@@ -120,6 +120,7 @@ void create_db_record(DB_RECORD *db_record, int salt_size, int username_size, in
     db_record->notes_len = 0;
     db_record->user_len = 0;
     db_record->salt_len = 0;
+    db_record->crypto_salt_len = 0;
 }
 
 /**
@@ -170,7 +171,7 @@ int read_all_from_db(sqlite3 *db, DB_RECORDS *records) {
         sqlite3_prepare_v2(db, "select * from passwords;", -1, &stmt, NULL);
         int i = 0;
         while (sqlite3_step(stmt) != SQLITE_DONE) {
-            create_db_record(&records->db_records[i], sqlite3_column_bytes(stmt, 1) + 1, sqlite3_column_bytes(stmt, 2) + 1, sqlite3_column_bytes(stmt, 3) + 1, sqlite3_column_bytes(stmt, 7) + 1);
+            create_db_record(&records->db_records[i], sqlite3_column_bytes(stmt, 1) + 1, sqlite3_column_bytes(stmt, 3) + 1, sqlite3_column_bytes(stmt, 5) + 1, sqlite3_column_bytes(stmt, 10) + 1);
             records->db_records[i].uid = sqlite3_column_int(stmt, 0);
             memcpy(records->db_records[i].salt, sqlite3_column_text(stmt, 1), sqlite3_column_bytes(stmt, 1));
             records->db_records[i].salt_len = sqlite3_column_int(stmt, 2);
@@ -348,7 +349,6 @@ void db_record_to_password_data(PASSWORD_DATA *password_data, DB_RECORD *db_reco
     printf("%s\n", db_record->salt);
     printf("%s\n", db_record->username);
     printf("%s\n", db_record->notes);
-    printf("%s\n", db_record->crypto_salt);
     Base64Decode(db_record->salt, &dec_salt, &db_record->salt_len);
     Base64Decode(db_record->username, &dec_user, &db_record->user_len);
     Base64Decode(db_record->notes, &dec_notes, &db_record->notes_len);
