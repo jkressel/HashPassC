@@ -265,6 +265,7 @@ void password_data_to_db_record(PASSWORD_DATA *password_data, DB_RECORD *db_reco
     char *enc_crypto;
     size_t enc_len;
     Base64Encode(salt_val, 8, &enc_crypto, &enc_len);
+    enc_crypto[enc_len] = '\0';
 
 
     unsigned char *encrypted_salt;
@@ -285,8 +286,11 @@ void password_data_to_db_record(PASSWORD_DATA *password_data, DB_RECORD *db_reco
     printf("%s", "All encryption done\n");
 
     Base64Encode(encrypted_user_name, username_len, &enc_user, &enc_len);
+    enc_user[enc_len] = '\0';
     Base64Encode(encrypted_salt, e_salt_len, &enc_salt, &enc_len);
+    enc_salt[enc_len] = '\0';
     Base64Encode(encrypted_notes, notes_txt_len, &enc_notes, &enc_len);
+    enc_notes[enc_len] = '\0';
 
     create_db_record(db_record, strlen(enc_salt) + 1, strlen(enc_user) + 1, strlen(enc_notes) + 1, strlen(enc_crypto) + 1);
 

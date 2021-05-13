@@ -72,7 +72,6 @@ unsigned char *decrypt(EVP_CIPHER_CTX *e, unsigned char *ciphertext, int *len)
     EVP_DecryptUpdate(e, plaintext, &p_len, ciphertext, *len);
     EVP_DecryptFinal_ex(e, plaintext+p_len, &f_len);
 
-    printf("%s\n", plaintext);
 
     *len = p_len + f_len;
     return plaintext;
