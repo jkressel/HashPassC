@@ -9,13 +9,11 @@
 #include <openssl/aes.h>
 #include <openssl/rand.h>
 #include <math.h>
-
-int aes_init(unsigned char *key_data, int key_data_len, unsigned char *salt, EVP_CIPHER_CTX *e_ctx, EVP_CIPHER_CTX *d_ctx);
-
-unsigned char *encrypt(EVP_CIPHER_CTX *e, unsigned char *plaintext, int *len);
-
-unsigned char *decrypt(EVP_CIPHER_CTX *e, unsigned char *ciphertext, int *len);
+#include "Config.h"
 
 unsigned char *generate_crypto_salt();
+
+unsigned char *init_and_decrypt(char *ciphertext, int *len, Config *config, char *crypto_salt);
+unsigned char *init_and_encrypt(char *plaintext, int *len, Config *config, char *crypto_salt);
 
 #endif //HASHPASSC_CRYPTOFUNCTIONS_H

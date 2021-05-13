@@ -21,5 +21,7 @@ int Base64Encode(const unsigned char* buffer, size_t length, char** b64text, siz
 	*b64text=(*bufferPtr).data;
 	*enc_len = (*bufferPtr).length;
 
+	*b64text[*enc_len] = '\0';
+
 	return (0); //success
 }

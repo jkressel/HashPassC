@@ -2,6 +2,7 @@
 // Created by alistair on 21/02/2021.
 //
 
+#include <string.h>
 #include "CryptoFunctions.h"
 
 /**
@@ -85,6 +86,46 @@ unsigned char* generate_crypto_salt() {
     unsigned char *random = malloc(8 * sizeof(char));
     RAND_bytes(random, 8);
     return random;
+}
+
+unsigned char *init_and_decrypt(char *ciphertext, int *len, Config *config, char *crypto_salt) {
+    unsigned char *plaintext;
+    EVP_CIPHER_CTX *en = EVP_CIPHER_CTX_new();
+    EVP_CIPHER_CTX *de = EVP_CIPHER_CTX_new();
+
+    if (aes_init(config->encryption_pass, strlen(config->encryption_pass), crypto_salt, en, de)) {
+        printf("Couldn't initialize AES cipher\n");
+        goto cleanup;
+    }
+
+    plaintext = decrypt(de, ciphertext, len);
+
+    cleanup:
+    EVP_CIPHER_CTX_cleanup(en);
+    EVP_CIPHER_CTX_cleanup(de);
+
+    return plaintext;
+
+}
+
+unsigned char *init_and_encrypt(char *plaintext, int *len, Config *config, char *crypto_salt) {
+    unsigned char *ciphertext;
+    EVP_CIPHER_CTX *en = EVP_CIPHER_CTX_new();
+    EVP_CIPHER_CTX *de = EVP_CIPHER_CTX_new();
+
+    if (aes_init(config->encryption_pass, strlen(config->encryption_pass), crypto_salt, en, de)) {
+        printf("Couldn't initialize AES cipher\n");
+        goto cleanup;
+    }
+
+    ciphertext = encrypt(en, plaintext, len);
+
+    cleanup:
+    EVP_CIPHER_CTX_cleanup(en);
+    EVP_CIPHER_CTX_cleanup(de);
+
+    return ciphertext;
+
 }
 
 

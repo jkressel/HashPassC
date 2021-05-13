@@ -11,12 +11,6 @@
 const int DB_READ_OK = 0;
 
 
-int prepare_stmt(sqlite3_stmt **res, sqlite3 *db, char* stmt) {
-    const char *tail;
-    return sqlite3_prepare_v2(db, stmt, -1, res, &tail);
-}
-
-
 /**
  * Opens an SQLITE3 database
  *
@@ -184,6 +178,12 @@ int read_all_from_db(sqlite3 *db, DB_RECORDS *records) {
             records->db_records[i].allowed = strdup((const char*)sqlite3_column_text(stmt, 9));
             memcpy(records->db_records[i].crypto_salt, sqlite3_column_text(stmt, 10), sqlite3_column_bytes(stmt, 10));
             records->db_records[i].crypto_salt_len = sqlite3_column_int(stmt, 11);
+
+            records->db_records[i].salt[records->db_records[i].salt_len] = '\0';
+            records->db_records[i].username[records->db_records[i].user_len] = '\0';
+            records->db_records[i].notes[records->db_records[i].notes_len] = '\0';
+            records->db_records[i].crypto_salt[records->db_records[i].crypto_salt_len] = '\0';
+
             i++;
 
         }
@@ -251,6 +251,8 @@ void copy_password_data(PASSWORD_DATA *password_data, PASSWORD_DATA *copy_passwo
     copy_password_data->length = password_data->length;
 }
 
+
+
 /**
  * convert PASSWORD_DATA to DB_RECORD ready to insert into the db, the involves encrypting the salt, username and notes
  * @param password_data
@@ -258,42 +260,33 @@ void copy_password_data(PASSWORD_DATA *password_data, PASSWORD_DATA *copy_passwo
  * @param config
  */
 void password_data_to_db_record(PASSWORD_DATA *password_data, DB_RECORD *db_record, Config *config) {
-    EVP_CIPHER_CTX *en = EVP_CIPHER_CTX_new();
-    EVP_CIPHER_CTX *de = EVP_CIPHER_CTX_new();
     unsigned char *salt_val = generate_crypto_salt();
 
     char *enc_crypto;
     size_t enc_len;
     Base64Encode(salt_val, 8, &enc_crypto, &enc_len);
-    enc_crypto[enc_len] = '\0';
 
 
-    if (aes_init(config->encryption_pass, strlen(config->encryption_pass), enc_crypto, en, de)) {
-        printf("Couldn't initialize AES cipher\n");
-        goto endpdtodbr;
-    }
-    unsigned char *esalt;
-    unsigned char *euser_name;
-    unsigned char *enotes;
-    int e_salt_len = 65;
-    int username_len = strlen(password_data->username) + 1;
-    int notes_txt_len = strlen(password_data->notes) + 1;
-    printf("%s", "Encryption started\n");
-    esalt = encrypt(en, password_data->salt, &e_salt_len);
-    euser_name = encrypt(en, password_data->username, &username_len);
-    enotes = encrypt(en, password_data->notes, &notes_txt_len);
-    printf("%s", "All encryption done\n");
-
+    unsigned char *encrypted_salt;
+    unsigned char *encrypted_user_name;
+    unsigned char *encrypted_notes;
     char *enc_user;
     char *enc_salt;
     char *enc_notes;
 
-    Base64Encode(euser_name, username_len, &enc_user, &enc_len);
-    enc_user[enc_len] = '\0';
-    Base64Encode(esalt, e_salt_len, &enc_salt, &enc_len);
-    enc_salt[enc_len] = '\0';
-    Base64Encode(enotes, notes_txt_len, &enc_notes, &enc_len);
-    enc_notes[enc_len] = '\0';
+
+    int e_salt_len = 65;
+    int username_len = strlen(password_data->username) + 1;
+    int notes_txt_len = strlen(password_data->notes) + 1;
+    printf("%s", "Encryption started\n");
+    encrypted_salt = init_and_encrypt(password_data->salt, &e_salt_len, config, enc_crypto);
+    encrypted_user_name = init_and_encrypt(password_data->username, &username_len, config, enc_crypto);
+    encrypted_notes = init_and_encrypt(password_data->notes, &notes_txt_len, config, enc_crypto);
+    printf("%s", "All encryption done\n");
+
+    Base64Encode(encrypted_user_name, username_len, &enc_user, &enc_len);
+    Base64Encode(encrypted_salt, e_salt_len, &enc_salt, &enc_len);
+    Base64Encode(encrypted_notes, notes_txt_len, &enc_notes, &enc_len);
 
     create_db_record(db_record, strlen(enc_salt) + 1, strlen(enc_user) + 1, strlen(enc_notes) + 1, strlen(enc_crypto) + 1);
 
@@ -311,11 +304,9 @@ void password_data_to_db_record(PASSWORD_DATA *password_data, DB_RECORD *db_reco
     db_record->uid = password_data->uid;
     db_record->crypto_salt_len = strlen(enc_crypto);
 
-    endpdtodbr: EVP_CIPHER_CTX_cleanup(en);
-    EVP_CIPHER_CTX_cleanup(de);
-    free(esalt);
-    free(euser_name);
-    free(enotes);
+    free(encrypted_salt);
+    free(encrypted_user_name);
+    free(encrypted_notes);
     free(salt_val);
     free(enc_notes);
     free(enc_user);
@@ -334,69 +325,46 @@ void db_record_to_password_data(PASSWORD_DATA *password_data, DB_RECORD *db_reco
 
 
 
-    unsigned char *dsalt;
-    unsigned char *duser_name;
-    unsigned char *dnotes;
+    unsigned char *decrypted_salt;
+    unsigned char *decrypted_user_name;
+    unsigned char *decrypted_notes;
 
     //do the decryption
     char *dec_salt;
     char *dec_user;
     char *dec_notes;
-    db_record->salt[db_record->salt_len] = '\0';
-    db_record->username[db_record->user_len] = '\0';
-    db_record->notes[db_record->notes_len] = '\0';
-    db_record->crypto_salt[db_record->crypto_salt_len] = '\0';
-    printf("%s\n", db_record->salt);
-    printf("%s\n", db_record->username);
-    printf("%s\n", db_record->notes);
+
     Base64Decode(db_record->salt, &dec_salt, &db_record->salt_len);
     Base64Decode(db_record->username, &dec_user, &db_record->user_len);
     Base64Decode(db_record->notes, &dec_notes, &db_record->notes_len);
-    printf("%d\n", db_record->salt_len);
-    printf("%d\n", db_record->user_len);
-    printf("%d\n", db_record->notes_len);
 
-    //cipher ctx
-    EVP_CIPHER_CTX *en = EVP_CIPHER_CTX_new();
-    EVP_CIPHER_CTX *de = EVP_CIPHER_CTX_new();
 
-    printf("%s\n", config->encryption_pass);
-    //let's check if we can even initialise aes
-    if (aes_init(config->encryption_pass, strlen(config->encryption_pass), db_record->crypto_salt, en, de)) {
-        printf("Couldn't initialize AES cipher\n");
-        goto enddbrtopr;
-    }
-
-    dsalt = decrypt(de, dec_salt, &db_record->salt_len);
-    duser_name = decrypt(de, dec_user, &db_record->user_len);
-    dnotes = decrypt(de, dec_notes, &db_record->notes_len);
-
-    free(dec_salt);
-    free(dec_user);
-    free(dec_notes);
+    decrypted_salt = init_and_decrypt(dec_salt, &db_record->salt_len, config, db_record->crypto_salt);
+    decrypted_user_name = init_and_decrypt(dec_user, &db_record->user_len, config, db_record->crypto_salt);
+    decrypted_notes = init_and_decrypt(dec_notes, &db_record->notes_len, config, db_record->crypto_salt);
 
 
     strncpy(password_data->name, db_record->name, strlen(db_record->name) + 1);
     password_data->name[strlen(db_record->name)] = '\0';
     strncpy(password_data->allowed, db_record->allowed, strlen(db_record->allowed));
     password_data->allowed[strlen(db_record->allowed)] = '\0';
-    strncpy(password_data->username, duser_name, db_record->user_len);
+    strncpy(password_data->username, decrypted_user_name, db_record->user_len);
     password_data->username[db_record->user_len] = '\0';
-    strncpy(password_data->salt, dsalt, 65);
+    strncpy(password_data->salt, decrypted_salt, 65);
     password_data->salt[64] = '\0';
-    strncpy(password_data->notes, dnotes, db_record->notes_len);
+    strncpy(password_data->notes, decrypted_notes, db_record->notes_len);
     password_data->notes[db_record->notes_len] = '\0';
     password_data->length = db_record->length;
     password_data->uid = db_record->uid;
 
 
     //free, we don't need them anymore
-    enddbrtopr: free(dsalt);
-    free(duser_name);
-    free(dnotes);
-
-    EVP_CIPHER_CTX_cleanup(en);
-    EVP_CIPHER_CTX_cleanup(de);
+    free(decrypted_salt);
+    free(decrypted_user_name);
+    free(decrypted_notes);
+    free(dec_salt);
+    free(dec_user);
+    free(dec_notes);
 
 }
 
