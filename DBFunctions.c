@@ -173,9 +173,9 @@ int read_all_from_db(sqlite3 *db, DB_RECORDS *records) {
             records->db_records[i].user_len = sqlite3_column_int(stmt, 4);
             memcpy(records->db_records[i].notes, sqlite3_column_text(stmt, 5), sqlite3_column_bytes(stmt, 5));
             records->db_records[i].notes_len = sqlite3_column_int(stmt, 6);
-            (&records->db_records[i])->name = strdup((const char*)sqlite3_column_text(stmt, 7));
+            strncpy(records->db_records[i].name, (const char*)sqlite3_column_text(stmt, 7), 301);
             records->db_records[i].length = sqlite3_column_int(stmt, 8);
-            records->db_records[i].allowed = strdup((const char*)sqlite3_column_text(stmt, 9));
+            strncpy(records->db_records[i].allowed, (const char*)sqlite3_column_text(stmt, 9), 301);
             memcpy(records->db_records[i].crypto_salt, sqlite3_column_text(stmt, 10), sqlite3_column_bytes(stmt, 10));
             records->db_records[i].crypto_salt_len = sqlite3_column_int(stmt, 11);
 

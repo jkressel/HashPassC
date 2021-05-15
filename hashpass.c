@@ -518,7 +518,7 @@ int main(int    argc,
 
             while(1) {
                 printf("%s",
-                       "Welcome to HashPass, please select an option\n\n\tc - create password\n\n\tv - view passwords\n\n\ti - import backup\n\n\te - export database to backup\n\n\tq - quit\n\nType selection: ");
+                       "Welcome to HashPass, please select an option\n\n\tc - create password\n\n\tv - view passwords\n\n\tq - quit\n\nType selection: ");
                 fflush(stdout);
                 char selection;
                 scanf(" %c", &selection);
@@ -529,10 +529,6 @@ int main(int    argc,
                         break;
                     case 'v':
                         show_passwords_option();
-                        break;
-                    case 'i':
-                        break;
-                    case 'e':
                         break;
                     case 'q':
                         goto final;

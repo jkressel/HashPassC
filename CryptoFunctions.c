@@ -100,8 +100,8 @@ unsigned char *init_and_decrypt(char *ciphertext, int *len, Config *config, char
     plaintext = decrypt(de, ciphertext, len);
 
     cleanup:
-    EVP_CIPHER_CTX_cleanup(en);
-    EVP_CIPHER_CTX_cleanup(de);
+    EVP_CIPHER_CTX_free(en);
+    EVP_CIPHER_CTX_free(de);
 
     return plaintext;
 
@@ -120,8 +120,8 @@ unsigned char *init_and_encrypt(char *plaintext, int *len, Config *config, char 
     ciphertext = encrypt(en, plaintext, len);
 
     cleanup:
-    EVP_CIPHER_CTX_cleanup(en);
-    EVP_CIPHER_CTX_cleanup(de);
+    EVP_CIPHER_CTX_free(en);
+    EVP_CIPHER_CTX_free(de);
 
     return ciphertext;
 

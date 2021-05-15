@@ -16,7 +16,8 @@ int Base64Encode(const unsigned char* buffer, size_t length, char** b64text, siz
 	BIO_flush(bio);
 	BIO_get_mem_ptr(bio, &bufferPtr);
 	BIO_set_close(bio, BIO_NOCLOSE);
-	BIO_free_all(bio);
+	BIO_vfree(bio);
+    BIO_vfree(b64);
 
 	*b64text=(*bufferPtr).data;
 	*enc_len = (*bufferPtr).length;
